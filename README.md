@@ -79,17 +79,21 @@ flutter build apk --release --split-per-abi    # arm64 17.7MB / v7a 15.2MB / x86
 
 ## 连服务端
 
-手机和电脑必须在同一个 Wi-Fi，地址填电脑的局域网 IP：
+服务端可以跑在自己电脑上，也可以部署到公网服务器（推荐，队友在哪儿都能连）：
 
-```
-http://192.168.3.46:8787
-```
+| 场景 | 地址填什么 |
+| --- | --- |
+| 服务端在本机 | `http://<电脑局域网IP>:8787`，别填 `127.0.0.1` |
+| 服务端在公网 | `http://<公网IP 或域名>:8787` |
 
-不要填 `127.0.0.1`。Android 9+ 默认禁止明文 HTTP，本项目在 `AndroidManifest.xml` 里显式开了
-`android:usesCleartextTraffic="true"`（局域网只读接口，没有账号密码）。
+**房间码必填**：单房间模式下它就是唯一的门禁，电脑端二维码里带的就是它，别填错也别外传。
 
-服务端默认单房间模式，房间码可以留空；多房间模式填电脑端创建的房间码。
-服务端的启动方式见主仓库的 [README](https://github.com/QAQ-AWA/cs-helper#快速开始)。
+Android 9+ 默认禁止明文 HTTP，本项目在 `AndroidManifest.xml` 里显式开了
+`android:usesCleartextTraffic="true"`（只读接口，没有账号密码）。
+
+服务端怎么起、怎么部署到服务器，见主仓库的
+[README](https://github.com/QAQ-AWA/cs-helper#快速开始) 和
+[DEPLOY.md](https://github.com/QAQ-AWA/cs-helper/blob/main/docs/DEPLOY.md)。
 
 ## 目录
 
