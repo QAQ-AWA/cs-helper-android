@@ -15,12 +15,17 @@ class PathsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final players = controller.pathPlayers;
+    final pathReport = controller.match?.pathReport;
     return RefreshIndicator(
       onRefresh: controller.refresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 28),
         children: <Widget>[
+          if (pathReport != null && !pathReport.isEmpty) ...<Widget>[
+            _pathReportCard(pathReport),
+            const SizedBox(height: 10),
+          ],
           _statusCard(),
           if (controller.pathsLoading) ...<Widget>[
             const SizedBox(height: 10),
@@ -72,6 +77,193 @@ class PathsTab extends StatelessWidget {
                 child: _playerRow(context, player),
               )),
         ],
+      ),
+    );
+  }
+
+  Widget _pathReportCard(PathReport report) {
+    final summary = report.summary?.trim() ?? '';
+    final tempo = report.tempo?.trim() ?? '';
+    final site = report.sitePreference?.trim() ?? '';
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.accentSoft,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  '开局走位解读',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.accent,
+                  ),
+                ),
+              ),
+              if (tempo.isNotEmpty) _reportMetaChip(tempo),
+              if (site.isNotEmpty) _reportMetaChip(site),
+            ],
+          ),
+          if (summary.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 10),
+            Text(
+              summary,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                height: 1.45,
+                color: AppColors.fg,
+              ),
+            ),
+          ],
+          if (report.players.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 12),
+            ...report.players.map(
+              (player) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _pathReportPlayer(player),
+              ),
+            ),
+          ],
+          if (report.counters.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 4),
+            const Text(
+              '整队对策',
+              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.fg),
+            ),
+            const SizedBox(height: 4),
+            ...report.counters.map(
+              (counter) => Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const Text(
+                      '·',
+                      style: TextStyle(fontSize: 12, height: 1.5, color: AppColors.dim),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        counter,
+                        softWrap: true,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.5,
+                          color: AppColors.fgSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _reportMetaChip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.elevated,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: AppColors.fgSecondary,
+        ),
+      ),
+    );
+  }
+
+  Widget _pathReportPlayer(PathReportPlayer player) {
+    final side = player.side?.trim().toUpperCase() ?? '';
+    final habit = player.habit?.trim() ?? '';
+    final likely = player.likely?.trim() ?? '';
+    final counter = player.counter?.trim() ?? '';
+    final name = player.nickname.trim().isEmpty ? '未知选手' : player.nickname.trim();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      decoration: BoxDecoration(
+        color: AppColors.elevated,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              Text(
+                name,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+              if (side == 'CT' || side == 'T') _reportSideChip(side),
+            ],
+          ),
+          if (habit.isNotEmpty) _reportLine('习惯', habit, AppColors.fgSecondary),
+          if (likely.isNotEmpty) _reportLine('大概率', likely, AppColors.fgSecondary),
+          if (counter.isNotEmpty) _reportLine('针对', counter, AppColors.accent),
+        ],
+      ),
+    );
+  }
+
+  Widget _reportSideChip(String side) {
+    final isCt = side == 'CT';
+    final color = isCt ? AppColors.sideA : AppColors.sideB;
+    final background = isCt ? AppColors.sideASoft : AppColors.sideBSoft;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 0.5),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        side,
+        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: color),
+      ),
+    );
+  }
+
+  Widget _reportLine(String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text.rich(
+        TextSpan(
+          children: <InlineSpan>[
+            TextSpan(
+              text: '$label：',
+              style: const TextStyle(fontSize: 12, height: 1.5, color: AppColors.muted),
+            ),
+            TextSpan(
+              text: value,
+              style: TextStyle(fontSize: 12, height: 1.5, color: color),
+            ),
+          ],
+        ),
+        softWrap: true,
       ),
     );
   }

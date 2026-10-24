@@ -468,6 +468,12 @@ class RoomController extends ChangeNotifier {
         freshTabs.add(1);
         _safeNotify();
         break;
+      case 'PATHS_REPORT_READY':
+        final report = payload['report'];
+        if (report is Map) {
+          _applyMatchPayload(<String, dynamic>{'pathReport': report});
+        }
+        break;
       case 'POST_MATCH_READY':
         final report = Map<String, dynamic>.of(payload)..remove('sessionId');
         _applyMatchPayload(<String, dynamic>{'postReport': report});

@@ -54,6 +54,68 @@ class JoinResult {
   }
 }
 
+/// 「对手开局走位解读」里的单个选手。
+class PathReportPlayer {
+  const PathReportPlayer({
+    required this.nickname,
+    this.steamId,
+    this.side,
+    this.habit,
+    this.likely,
+    this.counter,
+  });
+
+  final String nickname;
+  final String? steamId;
+
+  /// 'CT' / 'T'，可能为空
+  final String? side;
+  final String? habit;
+  final String? likely;
+  final String? counter;
+
+  factory PathReportPlayer.fromJson(Map<String, dynamic> json) {
+    return PathReportPlayer(
+      nickname: asString(json['nickname']) ?? '',
+      steamId: asString(json['steamId']),
+      side: asString(json['side']),
+      habit: asString(json['habit']),
+      likely: asString(json['likely']),
+      counter: asString(json['counter']),
+    );
+  }
+}
+
+/// 服务端根据轨迹产出的结构化走位结论。任何字段都可能缺省。
+class PathReport {
+  const PathReport({
+    this.summary,
+    this.tempo,
+    this.sitePreference,
+    this.players = const <PathReportPlayer>[],
+    this.counters = const <String>[],
+  });
+
+  final String? summary;
+  final String? tempo;
+  final String? sitePreference;
+  final List<PathReportPlayer> players;
+  final List<String> counters;
+
+  bool get isEmpty =>
+      (summary == null || summary!.isEmpty) && players.isEmpty;
+
+  factory PathReport.fromJson(Map<String, dynamic> json) {
+    return PathReport(
+      summary: asString(json['summary']),
+      tempo: asString(json['tempo']),
+      sitePreference: asString(json['sitePreference']),
+      players: asMapList(json['players']).map(PathReportPlayer.fromJson).toList(),
+      counters: asStringList(json['counters']),
+    );
+  }
+}
+
 class MatchSession {
   const MatchSession({
     required this.sessionId,
@@ -76,6 +138,7 @@ class MatchSession {
     this.aiWait = const <String>[],
     required this.tacticsState,
     this.tacticsText,
+    this.pathReport,
     this.postReport,
     this.teams = TeamPayload.empty,
     required this.createdAt,
@@ -107,6 +170,7 @@ class MatchSession {
   final List<String> aiWait;
   final String tacticsState;
   final String? tacticsText;
+  final PathReport? pathReport;
   final PostMatchReport? postReport;
   final TeamPayload teams;
   final int createdAt;
@@ -138,6 +202,9 @@ class MatchSession {
       aiWait: asStringList(json['aiWait']),
       tacticsState: asString(json['tacticsState']) ?? 'pending',
       tacticsText: asString(json['tacticsText']),
+      pathReport: json['pathReport'] is Map
+          ? PathReport.fromJson(asMap(json['pathReport']))
+          : null,
       postReport: json['postReport'] is Map
           ? PostMatchReport.fromJson(asMap(json['postReport']))
           : null,

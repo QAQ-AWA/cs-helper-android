@@ -145,6 +145,60 @@ void main() {
     });
   });
 
+  group('PathReport', () {
+    test('解析走位解读与缺省字段', () {
+      final report = PathReport.fromJson(<String, dynamic>{
+        'summary': 'CT 普遍重 A 轻 B，多数人开局离点游走',
+        'tempo': '中性，平均 48.4 秒',
+        'sitePreference': 'A 54% / B 46%（用 teamPlants：A 21 / B 18）',
+        'players': <dynamic>[
+          <String, dynamic>{
+            'nickname': '叁仟三百叄',
+            'steamId': '76561198000000001',
+            'side': 'CT',
+            'habit': 'CT 12 回合中 5 次守 A、1 次守 B',
+            'likely': '开局 20 秒内从 A 小或 A 大附近压出',
+            'counter': 'A 大第一身位开局 15 秒内给过点烟',
+          },
+          <String, dynamic>{
+            'nickname': '只有名字',
+          },
+        ],
+        'counters': <dynamic>['开局 15 秒内封 A 大过点烟', 'B 区只留一人看'],
+      });
+
+      expect(report.summary, contains('重 A 轻 B'));
+      expect(report.tempo, '中性，平均 48.4 秒');
+      expect(report.sitePreference, contains('A 54%'));
+      expect(report.players.length, 2);
+      expect(report.players.first.nickname, '叁仟三百叄');
+      expect(report.players.first.side, 'CT');
+      expect(report.players.first.counter, contains('过点烟'));
+      expect(report.players.last.habit, isNull);
+      expect(report.players.last.side, isNull);
+      expect(report.counters.length, 2);
+      expect(report.isEmpty, isFalse);
+    });
+
+    test('空报告视为没有', () {
+      expect(const PathReport().isEmpty, isTrue);
+      expect(
+        PathReport.fromJson(<String, dynamic>{'summary': '', 'players': <dynamic>[]}).isEmpty,
+        isTrue,
+      );
+    });
+
+    test('MatchSession 带上 pathReport', () {
+      final session = MatchSession.fromJson(<String, dynamic>{
+        'sessionId': 'session-1',
+        'pathReport': <String, dynamic>{'summary': 'CT 重 A'},
+      });
+      expect(session.pathReport, isNotNull);
+      expect(session.pathReport!.summary, 'CT 重 A');
+      expect(session.pathReport!.isEmpty, isFalse);
+    });
+  });
+
   group('ReplayBundle', () {
     final payload = <String, dynamic>{
       'map': 'de_dust2',

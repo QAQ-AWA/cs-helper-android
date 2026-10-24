@@ -31,7 +31,11 @@ Map<String, dynamic> _player(int index, String side) {
   };
 }
 
-MatchSession _match({bool withAnalysis = false, bool withPost = false}) {
+MatchSession _match({
+  bool withAnalysis = false,
+  bool withPost = false,
+  Map<String, dynamic>? pathReport,
+}) {
   final ct = List<Map<String, dynamic>>.generate(5, (index) => _player(index, 'ct'));
   final t = List<Map<String, dynamic>>.generate(5, (index) => _player(index + 5, 't'));
   return MatchSession.fromJson(<String, dynamic>{
@@ -49,6 +53,7 @@ MatchSession _match({bool withAnalysis = false, bool withPost = false}) {
     'aiState': withAnalysis ? 'ready' : 'pending',
     'tacticsState': withAnalysis ? 'ready' : 'pending',
     'tacticsText': withAnalysis ? '## 开局选点预判\n地面真相：A 13 / B 7。' : null,
+    'pathReport': pathReport,
     'aiResult': withAnalysis
         ? <String, dynamic>{
             'schemaVersion': 3,
@@ -90,8 +95,7 @@ MatchSession _match({bool withAnalysis = false, bool withPost = false}) {
           }
         : null,
     'postReport': withPost
-        ? <String, dynamic>{
-            'matchCode': 'g161-1',
+        ? <String, dynamic>{            'matchCode': 'g161-1',
             'mapName': 'de_dust2',
             'roundTotal': 22,
             'scoreA': 13,
@@ -217,6 +221,73 @@ void main() {
     expect(find.text('13 : 9'), findsOneWidget);
     expect(find.text('半团空气'), findsOneWidget);
     expect(find.text('Z大爷'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('轨迹页展示开局走位解读卡', (tester) async {
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final controller = _controller();
+    addTearDown(controller.dispose);
+    controller.match = _match(
+      pathReport: <String, dynamic>{
+        'summary': 'CT 普遍重 A 轻 B，多数人开局离点游走',
+        'tempo': '中性，平均 48.4 秒',
+        'sitePreference': 'A 54% / B 46%（用 teamPlants：A 21 / B 18）',
+        'players': <dynamic>[
+          <String, dynamic>{
+            'nickname': '叁仟三百叄',
+            'steamId': '76561198000000001',
+            'side': 'CT',
+            'habit': 'CT 12 回合中 5 次守 A、1 次守 B；T 侧 8 次压 A、4 次压 B，平均 58.4 秒下包',
+            'likely': '开局 20 秒内从 A 小或 A 大附近压出，倾向离点游走',
+            'counter': 'A 大第一身位开局 15 秒内给 A 大过点烟，第二人架 A 小',
+          },
+          <String, dynamic>{
+            'nickname': '长昵称选手用来检查换行不会把卡片撑破',
+            'steamId': '76561198000000002',
+            'side': 'T',
+            'likely': 'T 侧开局先控中路，再根据信息决定夹 A 或转 B',
+          },
+        ],
+        'counters': <dynamic>['开局 15 秒内封 A 大过点烟', 'A 大第一身位提前架枪', 'B 区只留一人看'],
+      },
+    );
+    controller.activeTab = 2;
+
+    await tester.pumpWidget(
+      MaterialApp(theme: buildTheme(), home: RoomPage(controller: controller)),
+    );
+    await tester.pump();
+
+    expect(find.text('开局走位解读'), findsOneWidget);
+    expect(find.text('叁仟三百叄'), findsOneWidget);
+    expect(find.text('整队对策'), findsOneWidget);
+    expect(find.textContaining('A 大第一身位提前架枪'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('没有走位解读时卡片不占位', (tester) async {
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final controller = _controller();
+    addTearDown(controller.dispose);
+    controller.match = _match();
+    controller.activeTab = 2;
+
+    await tester.pumpWidget(
+      MaterialApp(theme: buildTheme(), home: RoomPage(controller: controller)),
+    );
+    await tester.pump();
+
+    expect(find.text('开局走位解读'), findsNothing);
+    expect(find.text('对手开局走位'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
